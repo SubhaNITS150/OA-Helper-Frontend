@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import 'swiper/css';
+@import 'swiper/css/navigation';
+@import 'swiper/css/pagination';
+
+
+:root {
+    --color-primary: #4CAF4F;
+    --color-bg: #F7F9FA;
+    --color-text: #FBFFFC;
+    --color-secondary: #D6E0D6;
+    --color-bg2: #F5F7FA
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  display: none ;
+}
