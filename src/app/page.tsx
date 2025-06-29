@@ -11,10 +11,12 @@ export default function Home() {
   const isMobileView = useIsMobileView();
 
   return (
-    <LoginProvider>
-      <div>{isMobileView ? <NavbarMobile /> : <Navbar />}</div>
-      <Hero />
-      <Client />
-    </LoginProvider>
+    
+      <LoginProvider>
+        <div>{isMobileView ? <NavbarMobile /> : <Navbar />}</div>
+        <Hero />
+        <Client />
+      </LoginProvider>
+    
   );
 }
