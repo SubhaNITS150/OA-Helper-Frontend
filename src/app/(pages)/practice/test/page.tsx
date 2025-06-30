@@ -1,30 +1,11 @@
 "use client";
 
-// type Question = {
-//   id: string;
-//   questionText: string;
-//   optionA: string;
-//   optionB: string;
-//   optionC: string;
-//   optionD: string;
-//   correct: string;
-//   topicId: string;
-//   topic: {
-//     id: string;
-//     name: string;
-//   };
-// };
-
-// type Props = {
-//   question: Question;
-//   index: number;
-// };
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Circle, Flag, Clock } from "lucide-react";
+import { useQuestions } from "@/context/useQuestions";
 
 interface Question {
   id: string;
@@ -44,38 +25,44 @@ interface Question {
 }
 
 const TestCard = () => {
+  const { questions: contextQuestions } = useQuestions();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [questions, setQuestions] = useState<Question[]>(() => {
-    // Initialize 20 questions with sample data
-    return Array.from({ length: 20 }, (_, index) => ({
-      id: (index + 1).toString(),
-      questionText: `Question ${
-        index + 1
-      }: Which of the following is the correct approach to solve this problem?`,
-      optionA: `Option A for question ${index + 1}`,
-      optionB: `Option B for question ${index + 1}`,
-      optionC: `Option C for question ${index + 1}`,
-      optionD: `Option D for question ${index + 1}`,
-      correct: "A",
-      topicId: "topic_cn",
-      topic: {
-        id: "1",
-        name: "Sample Topic",
-      },
-      selectedAnswer: undefined,
-      status: index === 0 ? "not-answered" : "not-visited",
-    }));
-  });
+  const [questions, setQuestions] = useState<Question[]>([]);
+
+  // Transform context questions and add local state for answers and status
+  useEffect(() => {
+    if (contextQuestions && contextQuestions.length > 0) {
+      const transformedQuestions: Question[] = contextQuestions.map((question: any, index: number) => ({
+        id: question.id || (index + 1).toString(),
+        questionText: question.questionText || question.question || question.text,
+        optionA: question.optionA || question.options?.[0] || question.option1,
+        optionB: question.optionB || question.options?.[1] || question.option2,
+        optionC: question.optionC || question.options?.[2] || question.option3,
+        optionD: question.optionD || question.options?.[3] || question.option4,
+        correct: question.correct || question.correctAnswer,
+        topicId: question.topicId || question.topic_id || "default",
+        topic: {
+          id: question.topic?.id || question.topicId || "1",
+          name: question.topic?.name || question.topicName || "General"
+        },
+        selectedAnswer: undefined,
+        status: index === 0 ? "not-answered" : "not-visited"
+      }));
+
+      setQuestions(transformedQuestions);
+      console.log("Questions loaded from context:", transformedQuestions.length);
+    }
+  }, [contextQuestions]);
 
   const handleAnswerSelect = (optionIndex: number) => {
     const updatedQuestions = [...questions];
     updatedQuestions[currentQuestion].selectedAnswer = optionIndex;
     updatedQuestions[currentQuestion].status = "answered";
     setQuestions(updatedQuestions);
+    console.log(`Question ${currentQuestion + 1} answered with option ${optionIndex}`);
   };
 
   const handleQuestionNavigation = (questionIndex: number) => {
-    // Mark current question as not-answered if no answer selected and it was not-visited
     if (
       questions[currentQuestion].status === "not-visited" &&
       questions[currentQuestion].selectedAnswer === undefined
@@ -85,12 +72,14 @@ const TestCard = () => {
       setQuestions(updatedQuestions);
     }
     setCurrentQuestion(questionIndex);
+    console.log(`Navigated to question ${questionIndex + 1}`);
   };
 
   const handleMarkForReview = () => {
     const updatedQuestions = [...questions];
     updatedQuestions[currentQuestion].status = "marked-for-review";
     setQuestions(updatedQuestions);
+    console.log(`Question ${currentQuestion + 1} marked for review`);
   };
 
   const handleSaveAndNext = () => {
@@ -101,18 +90,23 @@ const TestCard = () => {
 
   const handleFinish = () => {
     console.log("Test finished!", questions);
+    
+    const submissionData = questions.map(q => ({
+      questionId: q.id,
+      selectedAnswer: q.selectedAnswer,
+      status: q.status
+    }));
+    
+    console.log("Submission data:", submissionData);
     alert("Test submitted successfully!");
   };
 
   const getStatusCounts = () => {
     const counts = {
       answered: questions.filter((q) => q.status === "answered").length,
-      "not-answered": questions.filter((q) => q.status === "not-answered")
-        .length,
+      "not-answered": questions.filter((q) => q.status === "not-answered").length,
       "not-visited": questions.filter((q) => q.status === "not-visited").length,
-      "marked-for-review": questions.filter(
-        (q) => q.status === "marked-for-review"
-      ).length,
+      "marked-for-review": questions.filter((q) => q.status === "marked-for-review").length,
     };
     return counts;
   };
@@ -142,6 +136,51 @@ const TestCard = () => {
         return <Clock className="w-4 h-4" />;
     }
   };
+
+  // Loading state
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4CAF4F] mx-auto mb-4"></div>
+  //         <p className="text-lg text-gray-600">Loading questions...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  // Error state
+  // if (error) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <div className="text-center bg-white p-8 rounded-lg shadow-lg">
+  //         <div className="text-red-500 mb-4">
+  //           <Circle className="w-16 h-16 mx-auto" />
+  //         </div>
+  //         <h2 className="text-xl font-semibold text-gray-800 mb-2">Failed to Load Questions</h2>
+  //         <p className="text-gray-600 mb-4">{error}</p>
+  //         <Button 
+  //           onClick={() => window.location.reload()} 
+  //           className="bg-[#4CAF4F] hover:bg-[#16a34a]"
+  //         >
+  //           Retry
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  // No questions available
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-lg shadow-lg">
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">No Questions Available</h2>
+          <p className="text-gray-600">Please check back later.</p>
+        </div>
+      </div>
+    );
+  }
 
   const statusCounts = getStatusCounts();
   const currentQ = questions[currentQuestion];
@@ -185,8 +224,8 @@ const TestCard = () => {
           </div>
         </div>
 
+        {/* Main Question Area */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Question Area */}
           <div className="lg:col-span-3">
             <Card className="shadow-lg border-[#bbf7d0]">
               <CardHeader className="bg-[#4CAF4F] text-white">
@@ -207,107 +246,49 @@ const TestCard = () => {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-xs">
+                      {currentQ.topic.name}
+                    </Badge>
+                  </div>
                   <p className="text-lg text-gray-800 leading-relaxed">
                     {currentQ.questionText}
                   </p>
                 </div>
 
                 <div className="space-y-4">
-                  <div
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      currentQ.selectedAnswer === 0
-                        ? "border-[#4CAF4F] bg-[#f0fdf4]"
-                        : "border-gray-200 hover:border-[#86efac]"
-                    }`}
-                    onClick={() => handleAnswerSelect(0)}
-                  >
-                    <div className="flex items-center">
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          currentQ.selectedAnswer === 0
-                            ? "border-[#4CAF4F] bg-[#4CAF4F]"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {currentQ.selectedAnswer === 0 && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
+                  {[
+                    { index: 0, text: currentQ.optionA, label: "A" },
+                    { index: 1, text: currentQ.optionB, label: "B" },
+                    { index: 2, text: currentQ.optionC, label: "C" },
+                    { index: 3, text: currentQ.optionD, label: "D" },
+                  ].map((option) => (
+                    <div
+                      key={option.index}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
+                        currentQ.selectedAnswer === option.index
+                          ? "border-[#4CAF4F] bg-[#f0fdf4]"
+                          : "border-gray-200 hover:border-[#86efac]"
+                      }`}
+                      onClick={() => handleAnswerSelect(option.index)}
+                    >
+                      <div className="flex items-center">
+                        <div
+                          className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
+                            currentQ.selectedAnswer === option.index
+                              ? "border-[#4CAF4F] bg-[#4CAF4F]"
+                              : "border-gray-300"
+                          }`}
+                        >
+                          {currentQ.selectedAnswer === option.index && (
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          )}
+                        </div>
+                        <span className="font-medium text-gray-600 mr-2">{option.label}.</span>
+                        <span className="text-gray-700">{option.text}</span>
                       </div>
-                      <span className="text-gray-700">{currentQ.optionA}</span>
                     </div>
-                  </div>
-
-                  <div
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      currentQ.selectedAnswer === 1
-                        ? "border-[#4CAF4F] bg-[#f0fdf4]"
-                        : "border-gray-200 hover:border-[#86efac]"
-                    }`}
-                    onClick={() => handleAnswerSelect(1)}
-                  >
-                    <div className="flex items-center">
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          currentQ.selectedAnswer === 1
-                            ? "border-[#4CAF4F] bg-[#4CAF4F]"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {currentQ.selectedAnswer === 1 && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
-                      </div>
-                      <span className="text-gray-700">{currentQ.optionB}</span>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      currentQ.selectedAnswer === 2
-                        ? "border-[#4CAF4F] bg-[#f0fdf4]"
-                        : "border-gray-200 hover:border-[#86efac]"
-                    }`}
-                    onClick={() => handleAnswerSelect(2)}
-                  >
-                    <div className="flex items-center">
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          currentQ.selectedAnswer === 2
-                            ? "border-[#4CAF4F] bg-[#4CAF4F]"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {currentQ.selectedAnswer === 2 && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
-                      </div>
-                      <span className="text-gray-700">{currentQ.optionC}</span>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      currentQ.selectedAnswer === 3
-                        ? "border-[#4CAF4F] bg-[#f0fdf4]"
-                        : "border-gray-200 hover:border-[#86efac]"
-                    }`}
-                    onClick={() => handleAnswerSelect(3)}
-                  >
-                    <div className="flex items-center">
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                          currentQ.selectedAnswer === 3
-                            ? "border-[#4CAF4F] bg-[#4CAF4F]"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        {currentQ.selectedAnswer === 3 && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
-                      </div>
-                      <span className="text-gray-700">{currentQ.optionD}</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Bottom Action Buttons */}
@@ -359,7 +340,7 @@ const TestCard = () => {
                           : ""
                       } ${getStatusColor(question.status)}`}
                     >
-                      {question.id}
+                      {index + 1}
                     </button>
                   ))}
                 </div>
