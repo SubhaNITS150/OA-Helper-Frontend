@@ -28,6 +28,7 @@ const TestCard = () => {
   const { questions: contextQuestions } = useQuestions();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [count, setCount] = useState<number>(0);
 
   // Transform context questions and add local state for answers and status
   useEffect(() => {
@@ -231,7 +232,7 @@ const TestCard = () => {
               <CardHeader className="bg-[#4CAF4F] text-white">
                 <CardTitle className="flex justify-between items-center">
                   <span>
-                    Question {currentQ.id} of {questions.length}
+                    Question {count + 1} of {questions.length}
                   </span>
                   <Button
                     variant="secondary"
@@ -333,7 +334,10 @@ const TestCard = () => {
                   {questions.map((question, index) => (
                     <button
                       key={question.id}
-                      onClick={() => handleQuestionNavigation(index)}
+                      onClick={() => {
+                        handleQuestionNavigation(index)
+                        setCount(index)
+                      }}
                       className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-200 hover:scale-105 ${
                         index === currentQuestion
                           ? "ring-2 ring-[#4ade80] ring-offset-2"
