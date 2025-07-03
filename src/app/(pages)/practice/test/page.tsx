@@ -24,34 +24,53 @@ interface Question {
   status: "not-visited" | "answered" | "not-answered" | "marked-for-review";
 }
 
+interface SubmissionData {
+  questionNo: number;
+  questionId: string;
+  selectedAnswer: number;
+  status: "not-visited" | "answered" | "not-answered" | "marked-for-review";
+}
+
 const TestCard = () => {
   const { questions: contextQuestions } = useQuestions();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [count, setCount] = useState<number>(0);
 
+  // Submission logic
+
   // Transform context questions and add local state for answers and status
   useEffect(() => {
     if (contextQuestions && contextQuestions.length > 0) {
-      const transformedQuestions: Question[] = contextQuestions.map((question: any, index: number) => ({
-        id: question.id || (index + 1).toString(),
-        questionText: question.questionText || question.question || question.text,
-        optionA: question.optionA || question.options?.[0] || question.option1,
-        optionB: question.optionB || question.options?.[1] || question.option2,
-        optionC: question.optionC || question.options?.[2] || question.option3,
-        optionD: question.optionD || question.options?.[3] || question.option4,
-        correct: question.correct || question.correctAnswer,
-        topicId: question.topicId || question.topic_id || "default",
-        topic: {
-          id: question.topic?.id || question.topicId || "1",
-          name: question.topic?.name || question.topicName || "General"
-        },
-        selectedAnswer: undefined,
-        status: index === 0 ? "not-answered" : "not-visited"
-      }));
+      const transformedQuestions: Question[] = contextQuestions.map(
+        (question: any, index: number) => ({
+          id: question.id || (index + 1).toString(),
+          questionText:
+            question.questionText || question.question || question.text,
+          optionA:
+            question.optionA || question.options?.[0] || question.option1,
+          optionB:
+            question.optionB || question.options?.[1] || question.option2,
+          optionC:
+            question.optionC || question.options?.[2] || question.option3,
+          optionD:
+            question.optionD || question.options?.[3] || question.option4,
+          correct: question.correct || question.correctAnswer,
+          topicId: question.topicId || question.topic_id || "default",
+          topic: {
+            id: question.topic?.id || question.topicId || "1",
+            name: question.topic?.name || question.topicName || "General",
+          },
+          selectedAnswer: undefined,
+          status: index === 0 ? "not-answered" : "not-visited",
+        })
+      );
 
       setQuestions(transformedQuestions);
-      console.log("Questions loaded from context:", transformedQuestions.length);
+      console.log(
+        "Questions loaded from context:",
+        transformedQuestions.length
+      );
     }
   }, [contextQuestions]);
 
@@ -60,7 +79,9 @@ const TestCard = () => {
     updatedQuestions[currentQuestion].selectedAnswer = optionIndex;
     updatedQuestions[currentQuestion].status = "answered";
     setQuestions(updatedQuestions);
-    console.log(`Question ${currentQuestion + 1} answered with option ${optionIndex}`);
+    console.log(
+      `Question ${currentQuestion + 1} answered with option ${optionIndex}`
+    );
   };
 
   const handleQuestionNavigation = (questionIndex: number) => {
@@ -89,25 +110,66 @@ const TestCard = () => {
     }
   };
 
+  //Here write finishing logic
+
   const handleFinish = () => {
     console.log("Test finished!", questions);
-    
-    const submissionData = questions.map(q => ({
+
+    const submissionData = questions.map((q, index) => ({
+      questionNo: index + 1,
       questionId: q.id,
       selectedAnswer: q.selectedAnswer,
-      status: q.status
+      status: q.status,
+      correctAnswer: q.correct,
     }));
-    
+
+    let correctAns = 0;
+    let wrongAns = 0;
+    let notattempted = 0;
+
+    for (const submission of submissionData) {
+      if (
+        submission.selectedAnswer == undefined ||
+        submission.selectedAnswer == null
+      ) {
+        notattempted++;
+      } 
+      
+      else {
+        const selectedLetter = String.fromCharCode(
+          submission.selectedAnswer + 65
+        );
+
+        if (["A", "B", "C", "D"].includes(selectedLetter)) {
+          if (selectedLetter === submission.correctAnswer) {
+            correctAns++;
+          }
+        }
+        else{
+          notattempted++;
+        }
+      }
+    }
+
+    wrongAns = submissionData.length - notattempted - correctAns;
+
     console.log("Submission data:", submissionData);
+    console.log("Correct Answers:", correctAns);
+    console.log("Not Attempted:", notattempted);
+    console.log("Wrong Answer:", wrongAns);
+
     alert("Test submitted successfully!");
   };
 
   const getStatusCounts = () => {
     const counts = {
       answered: questions.filter((q) => q.status === "answered").length,
-      "not-answered": questions.filter((q) => q.status === "not-answered").length,
+      "not-answered": questions.filter((q) => q.status === "not-answered")
+        .length,
       "not-visited": questions.filter((q) => q.status === "not-visited").length,
-      "marked-for-review": questions.filter((q) => q.status === "marked-for-review").length,
+      "marked-for-review": questions.filter(
+        (q) => q.status === "marked-for-review"
+      ).length,
     };
     return counts;
   };
@@ -160,8 +222,8 @@ const TestCard = () => {
   //         </div>
   //         <h2 className="text-xl font-semibold text-gray-800 mb-2">Failed to Load Questions</h2>
   //         <p className="text-gray-600 mb-4">{error}</p>
-  //         <Button 
-  //           onClick={() => window.location.reload()} 
+  //         <Button
+  //           onClick={() => window.location.reload()}
   //           className="bg-[#4CAF4F] hover:bg-[#16a34a]"
   //         >
   //           Retry
@@ -176,7 +238,9 @@ const TestCard = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center bg-white p-8 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">No Questions Available</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            No Questions Available
+          </h2>
           <p className="text-gray-600">Please check back later.</p>
         </div>
       </div>
@@ -285,7 +349,9 @@ const TestCard = () => {
                             <div className="w-2 h-2 bg-white rounded-full"></div>
                           )}
                         </div>
-                        <span className="font-medium text-gray-600 mr-2">{option.label}.</span>
+                        <span className="font-medium text-gray-600 mr-2">
+                          {option.label}.
+                        </span>
                         <span className="text-gray-700">{option.text}</span>
                       </div>
                     </div>
@@ -335,8 +401,8 @@ const TestCard = () => {
                     <button
                       key={question.id}
                       onClick={() => {
-                        handleQuestionNavigation(index)
-                        setCount(index)
+                        handleQuestionNavigation(index);
+                        setCount(index);
                       }}
                       className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-200 hover:scale-105 ${
                         index === currentQuestion

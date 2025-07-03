@@ -35,7 +35,7 @@ export default function Navbar() {
                 <Link href="/">Home</Link>
                 <Link href="/practice">Practice</Link>
                 <Link href="/Dashboard">Dashboard</Link>
-                <Link href="/">Contribute</Link>
+                <Link href="/contribute">Contribute</Link>
                 <Link href="/">Friendzone</Link>
 
                 <button 
