@@ -129,8 +129,7 @@ const TestCard = () => {
 
     for (const submission of submissionData) {
       if (
-        submission.selectedAnswer == undefined ||
-        submission.selectedAnswer == null
+        submission.selectedAnswer == undefined
       ) {
         notattempted++;
       } 
